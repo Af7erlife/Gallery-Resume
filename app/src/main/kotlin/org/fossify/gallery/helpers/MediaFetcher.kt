@@ -520,7 +520,13 @@ class MediaFetcher(val context: Context) {
                     dateTaken = lastModified
                 }
 
-                val videoDuration = Math.round(cursor.getIntValue(MediaStore.MediaColumns.DURATION) / 1000.toDouble()).toInt()
+                // MediaStore stores DURATION in milliseconds and it can exceed Int.MAX_VALUE
+                // for long videos. Read it as Long before converting to seconds because
+                // Medium.videoDuration is stored in seconds as an Int.
+                val durationMillis = cursor.getLongValue(MediaStore.MediaColumns.DURATION).coerceAtLeast(0L)
+                val videoDuration = (durationMillis / 1000L)
+                    .coerceAtMost(Int.MAX_VALUE.toLong())
+                    .toInt()
                 val isFavorite = favoritePaths.contains(path)
                 val medium =
                     Medium(null, filename, path, path.getParentPath(), lastModified, dateTaken, size, type, videoDuration, isFavorite, 0L, mediaStoreId)
