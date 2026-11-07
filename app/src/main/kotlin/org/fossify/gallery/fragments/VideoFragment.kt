@@ -914,12 +914,30 @@ class VideoFragment : ViewPagerFragment(), TextureView.SurfaceTextureListener,
         }
 
         mCurrTime = mExoPlayer!!.duration
-        if (listener?.videoEnded() == false && mConfig.loopVideos) {
+        if (listener?.videoEnded() == true) {
+            return
+        }
+
+        if (mConfig.autoPlayNextVideo) {
+            mSeekBar.progress = mSeekBar.max
+            mCurrTimeView.text = mDuration.getFormattedDuration()
+            if (listener?.goToNextVideo() != true) {
+                pauseVideo()
+            }
+        } else if (mConfig.loopVideos) {
             playVideo()
         } else {
             mSeekBar.progress = mSeekBar.max
             mCurrTimeView.text = mDuration.getFormattedDuration()
             pauseVideo()
+        }
+    }
+
+    /** Start this page as soon as its player is ready, without waiting for a user tap. */
+    fun startPlaybackWhenReady() {
+        mPlayOnPrepared = true
+        if (mIsPlayerPrepared && mExoPlayer != null) {
+            playVideo()
         }
     }
 

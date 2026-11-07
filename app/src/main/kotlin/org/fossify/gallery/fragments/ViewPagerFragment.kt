@@ -34,6 +34,8 @@ abstract class ViewPagerFragment : Fragment() {
 
         fun goToNextItem()
 
+        fun goToNextVideo(): Boolean
+
         fun launchViewVideoIntent(path: String)
 
         fun isSlideShowActive(): Boolean

@@ -148,6 +148,7 @@
     <string name="autoplay_videos">自动播放视频</string>
     <string name="remember_last_video_position">记住视频上一次播放时的位置</string>
     <string name="loop_videos">循环播放视频</string>
+    <string name="auto_play_next_video">自动连播下一个视频</string>
     <string name="animate_gifs">GIF 动图的缩略图显示为动画</string>
     <string name="max_brightness">全屏时将屏幕调到最大亮度</string>
     <string name="crop_thumbnails">裁剪缩略图为正方形</string>

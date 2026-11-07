@@ -213,6 +213,10 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(LOOP_VIDEOS, false)
         set(loop) = prefs.edit().putBoolean(LOOP_VIDEOS, loop).apply()
 
+    var autoPlayNextVideo: Boolean
+        get() = prefs.getBoolean(AUTO_PLAY_NEXT_VIDEO, false)
+        set(enabled) = prefs.edit().putBoolean(AUTO_PLAY_NEXT_VIDEO, enabled).apply()
+
     var muteVideos: Boolean
         get() = prefs.getBoolean(MUTE_VIDEOS, false)
         set(muteVideos) = prefs.edit().putBoolean(MUTE_VIDEOS, muteVideos).apply()

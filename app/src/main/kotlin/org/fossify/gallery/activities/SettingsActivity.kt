@@ -65,6 +65,7 @@ class SettingsActivity : SimpleActivity() {
         setupAutoplayVideos()
         setupRememberLastVideo()
         setupLoopVideos()
+        setupAutoPlayNextVideo()
         setupOpenVideosOnSeparateScreen()
         setupOnVideoTap()
         setupMaxBrightness()
@@ -289,6 +290,22 @@ class SettingsActivity : SimpleActivity() {
         binding.settingsLoopVideosHolder.setOnClickListener {
             binding.settingsLoopVideos.toggle()
             config.loopVideos = binding.settingsLoopVideos.isChecked
+            if (config.loopVideos && config.autoPlayNextVideo) {
+                config.autoPlayNextVideo = false
+                binding.settingsAutoPlayNextVideo.isChecked = false
+            }
+        }
+    }
+
+    private fun setupAutoPlayNextVideo() {
+        binding.settingsAutoPlayNextVideo.isChecked = config.autoPlayNextVideo
+        binding.settingsAutoPlayNextVideoHolder.setOnClickListener {
+            binding.settingsAutoPlayNextVideo.toggle()
+            config.autoPlayNextVideo = binding.settingsAutoPlayNextVideo.isChecked
+            if (config.autoPlayNextVideo && config.loopVideos) {
+                config.loopVideos = false
+                binding.settingsLoopVideos.isChecked = false
+            }
         }
     }
 
@@ -919,6 +936,7 @@ class SettingsActivity : SimpleActivity() {
                 put(AUTOPLAY_VIDEOS, config.autoplayVideos)
                 put(REMEMBER_LAST_VIDEO_POSITION, config.rememberLastVideoPosition)
                 put(LOOP_VIDEOS, config.loopVideos)
+                put(AUTO_PLAY_NEXT_VIDEO, config.autoPlayNextVideo)
                 put(GESTURE_VIDEO_PLAYER, config.gestureVideoPlayer)
                 put(VIDEO_PLAYER_TYPE, config.videoPlayerType)
                 put(ALLOW_VIDEO_GESTURES, config.allowVideoGestures)
@@ -1065,6 +1083,7 @@ class SettingsActivity : SimpleActivity() {
                 AUTOPLAY_VIDEOS -> config.autoplayVideos = value.toBoolean()
                 REMEMBER_LAST_VIDEO_POSITION -> config.rememberLastVideoPosition = value.toBoolean()
                 LOOP_VIDEOS -> config.loopVideos = value.toBoolean()
+                AUTO_PLAY_NEXT_VIDEO -> config.autoPlayNextVideo = value.toBoolean()
                 GESTURE_VIDEO_PLAYER -> config.gestureVideoPlayer = value.toBoolean()
                 VIDEO_PLAYER_TYPE -> config.videoPlayerType = value.toInt()
                 ALLOW_VIDEO_GESTURES -> config.allowVideoGestures = value.toBoolean()

@@ -194,6 +194,7 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
     private var mDirectory = ""
     private var mIsFullScreen = false
     private var mPos = -1
+    private var mPendingAutoPlayVideoPosition = -1
     private var mShowAll = false
     private var mIsSlideshowActive = false
     private var mPrevHashcode = 0
@@ -1352,10 +1353,20 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
 
         if (!mHasRestoredFolderPosition && intent.getBooleanExtra(IS_FROM_GALLERY, false) &&
             mDirectory.isNotEmpty() && mDirectory != FAVORITES && mDirectory != RECYCLE_BIN) {
-            mHasRestoredFolderPosition = true
             val savedPath = folderProgressPrefs.getString(folderProgressKey(mDirectory), null)
-            if (!savedPath.isNullOrEmpty() && media.any { it.path.equals(savedPath, true) }) {
+            if (savedPath.isNullOrEmpty()) {
+                // There is no saved position for this folder yet.
+                mHasRestoredFolderPosition = true
+            } else if (media.any { it.path.equals(savedPath, true) }) {
+                // Restore only after the saved item appears in the loaded media list.
+                // ViewPagerActivity first creates a temporary one-item list for the tapped
+                // item; marking restoration complete at that stage would skip the real list.
                 mPath = savedPath
+                mHasRestoredFolderPosition = true
+            } else if (media.size > 1) {
+                // The full folder list is available but the saved file no longer exists.
+                // Keep the item the user tapped as the fallback position.
+                mHasRestoredFolderPosition = true
             }
         }
 
@@ -1454,6 +1465,19 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
         checkOrientation()
     }
 
+    override fun goToNextVideo(): Boolean {
+        if (!config.autoPlayNextVideo) return false
+
+        val nextVideoPosition = (binding.viewPager.currentItem + 1..mMediaFiles.lastIndex)
+            .firstOrNull { position -> mMediaFiles[position].isVideo() }
+            ?: return false
+
+        mPendingAutoPlayVideoPosition = nextVideoPosition
+        binding.viewPager.setCurrentItem(nextVideoPosition, false)
+        checkOrientation()
+        return true
+    }
+
     override fun launchViewVideoIntent(path: String) {
         hideKeyboard()
         ensureBackgroundThread {
@@ -1536,6 +1560,12 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
         if (mPos != position) {
             mPos = position
             saveFolderBrowseProgress()
+            if (mPendingAutoPlayVideoPosition == position) {
+                mPendingAutoPlayVideoPosition = -1
+                binding.viewPager.post {
+                    (getCurrentFragment() as? VideoFragment)?.startPlaybackWhenReady()
+                }
+            }
             updateActionbarTitle()
             refreshMenuItems()
             scheduleSwipe()
