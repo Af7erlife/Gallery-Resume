@@ -198,7 +198,6 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
     private var mShowAll = false
     private var mIsSlideshowActive = false
     private var mPrevHashcode = 0
-    private var mHasRestoredFolderPosition = false
 
     private val folderProgressPrefs by lazy { getSharedPreferences("folder_browse_progress", MODE_PRIVATE) }
 
@@ -1351,24 +1350,9 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
         mPrevHashcode = media.hashCode()
         mMediaFiles = media
 
-        if (!mHasRestoredFolderPosition && intent.getBooleanExtra(IS_FROM_GALLERY, false) &&
-            mDirectory.isNotEmpty() && mDirectory != FAVORITES && mDirectory != RECYCLE_BIN) {
-            val savedPath = folderProgressPrefs.getString(folderProgressKey(mDirectory), null)
-            if (savedPath.isNullOrEmpty()) {
-                // There is no saved position for this folder yet.
-                mHasRestoredFolderPosition = true
-            } else if (media.any { it.path.equals(savedPath, true) }) {
-                // Restore only after the saved item appears in the loaded media list.
-                // ViewPagerActivity first creates a temporary one-item list for the tapped
-                // item; marking restoration complete at that stage would skip the real list.
-                mPath = savedPath
-                mHasRestoredFolderPosition = true
-            } else if (media.size > 1) {
-                // The full folder list is available but the saved file no longer exists.
-                // Keep the item the user tapped as the fallback position.
-                mHasRestoredFolderPosition = true
-            }
-        }
+        // Do not replace mPath with the previously viewed file here. mPath identifies
+        // the item the user actually tapped; folder-position restoration belongs to
+        // MediaActivity's grid and must never change the item opened in this viewer.
 
         if (refetchViewPagerPosition || mPos == -1) {
             mPos = getPositionInList(media).coerceIn(0, media.lastIndex.coerceAtLeast(0))

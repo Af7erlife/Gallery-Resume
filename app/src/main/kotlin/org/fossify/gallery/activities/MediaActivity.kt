@@ -128,6 +128,9 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
     private var mLoadedInitialPhotos = false
     private var mShowLoadingIndicator = true
     private var mWasFullscreenViewOpen = false
+    private var mHasRestoredFolderScrollPosition = false
+
+    private val folderProgressPrefs by lazy { getSharedPreferences("folder_browse_progress", MODE_PRIVATE) }
     private var mLastSearchedText = ""
     private var mLatestMediaId = 0L
     private var mLatestMediaDateId = 0L
@@ -489,6 +492,48 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
 
             getMedia()
             setupLayoutManager()
+        }
+    }
+
+    /**
+     * Restore the last viewed item as a scroll position in the folder grid.
+     * This deliberately does not open the saved file; tapping a thumbnail must
+     * always open the item the user selected.
+     */
+    private fun restoreLastViewedMediaPosition(media: ArrayList<ThumbnailItem>, isFromCache: Boolean) {
+        if (mHasRestoredFolderScrollPosition || mPath.isEmpty() ||
+            mPath == FAVORITES || mPath == RECYCLE_BIN || mIsGetImageIntent ||
+            mIsGetVideoIntent || mIsGetAnyIntent) {
+            return
+        }
+
+        val savedPath = folderProgressPrefs.getString("last_media_path:$mPath", null)
+        if (savedPath.isNullOrEmpty()) {
+            mHasRestoredFolderScrollPosition = true
+            return
+        }
+
+        val savedPosition = media.indexOfFirst { item ->
+            item is Medium && item.path.equals(savedPath, ignoreCase = true)
+        }
+
+        if (savedPosition >= 0) {
+            // Cached media can be stale; allow the final query result to refine
+            // the position after sorting/filtering has been applied.
+            if (!isFromCache) {
+                mHasRestoredFolderScrollPosition = true
+            }
+            binding.mediaGrid.post {
+                if (!isFinishing && !isDestroyed) {
+                    (binding.mediaGrid.layoutManager as? MyGridLayoutManager)
+                        ?.scrollToPositionWithOffset(savedPosition, 0)
+                        ?: binding.mediaGrid.scrollToPosition(savedPosition)
+                }
+            }
+        } else if (!isFromCache) {
+            // The complete folder result is available and the saved file is gone
+            // (or no longer included by the active filters/sort scope).
+            mHasRestoredFolderScrollPosition = true
         }
     }
 
@@ -1018,6 +1063,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
             }
             binding.mediaFastscroller.beVisibleIf(binding.mediaEmptyTextPlaceholder.isGone())
             setupAdapter()
+            restoreLastViewedMediaPosition(media, isFromCache)
         }
 
         mLatestMediaId = getLatestMediaId()
